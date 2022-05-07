@@ -22,7 +22,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 	wc.hInstance = hInstance;
 	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	wc.hCursor	= LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)GetStockObject(DKGRAY_BRUSH);
+	wc.hbrBackground = (HBRUSH)GetStockObject(GRAY_BRUSH);
 	wc.lpszMenuName	= MAKEINTRESOURCE(IDM_MYMENURESOURCE);
 	wc.lpszClassName = szAppName;
 	
@@ -49,7 +49,14 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
 	
-	gui::panel pnl(hInstance, hWnd);
+	gui::panel pnl(hInstance, hWnd, gui::Rectangle {
+		.x_relative = true,
+		.y_relative = false,
+		.x0 = 0, 
+		.y0 = 0,
+		.width = 100,
+		.heigth = 30,
+	}, DKGRAY_BRUSH);
 	
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);

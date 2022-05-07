@@ -13,11 +13,35 @@ static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			INFO("create");
 			return 0;
 			
-			
 		case WM_PAINT:
 			INFO("paint");
 			return 0;
+		case WM_SIZE:
+			RECT prRec;
+			if (!GetWindowRect(hw_par, &prRec))
+				ERR2("GetWindowRect()", GetLastError());
+
+			long prW = prRec.right - prRec.left;
+			long prH = prRec.bottom - prRec.top;
 			
+			long cld_x0, cld_w;
+			if (pnl_rec.x_relative) {
+				cld_x0 = prW * pnl_rec.x0 / 100;
+				cld_w = prW * pnl_rec.width / 100;
+			} else {
+				cld_x0 = pnl_rec.x0;
+				cld_w = pnl_rec.width;
+			}
+			long cld_y0, cld_h;
+			if (pnl_rec.y_relative) {
+				cld_y0 = prH * pnl_rec.y0 / 100;
+				cld_h = prH * pnl_rec.heigth / 100;
+			} else {
+				cld_y0 = pnl_rec.y0;
+				cld_h = pnl_rec.heigth;
+			}
+			return 0;
+
 		case WM_DESTROY:
 			INFO("destroy");
 			return 0;
@@ -26,21 +50,48 @@ static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-panel::panel(HINSTANCE hmInst, HWND hwParent)
+panel::panel(HINSTANCE hmInstance, HWND hwParent, Rectangle pnlRect, int bgColor)
+: hm_inst(hmInstance), hw_par(hwParent), pnl_rec(pnlRect)
 {			
 	WNDCLASSEX wc;
+
+	// calculate rect of panel
+	RECT prRec;
+	if (!GetWindowRect(hw_par, &prRec))
+		ERR2("GetWindowRect()", GetLastError());
+
+	long prW = prRec.right - prRec.left;
+	long prH = prRec.bottom - prRec.top;
 	
-	if (!GetClassInfoExA(NULL, TEXT(CLASS_NAME), &wc)) {
+	long cld_x0, cld_w;
+	if (pnl_rec.x_relative) {
+		cld_x0 = prW * pnl_rec.x0 / 100;
+		cld_w = prW * pnl_rec.width / 100;
+	} else {
+		cld_x0 = pnl_rec.x0;
+		cld_w = pnl_rec.width;
+	}
+	long cld_y0, cld_h;
+	if (pnl_rec.y_relative) {
+		cld_y0 = prH * pnl_rec.y0 / 100;
+		cld_h = prH * pnl_rec.heigth / 100;
+	} else {
+		cld_y0 = pnl_rec.y0;
+		cld_h = pnl_rec.heigth;
+	}
+
+	
+	if (!GetClassInfoExA(NULL, CLASS_NAME, (LPWNDCLASSEXA)&wc)) {
 	
 		wc.cbSize = sizeof(WNDCLASSEX);
 		wc.style = CS_HREDRAW | CS_VREDRAW;
 		wc.lpfnWndProc = PnlProc;
 		wc.cbClsExtra = 0;
 		wc.cbWndExtra = 0;
-		wc.hInstance = hmInst;
+		wc.hInstance = hm_inst;
 		wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 		wc.hCursor	= LoadCursor(NULL, IDC_ARROW);
-		wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+		wc.hbrBackground = (HBRUSH)GetStockObject(bgColor);
 		wc.lpszMenuName	= 0;
 		wc.lpszClassName = TEXT(CLASS_NAME);
 		wc.hIconSm = NULL;
@@ -50,17 +101,17 @@ panel::panel(HINSTANCE hmInst, HWND hwParent)
 	
 	}
 		
-	hpnlWnd = CreateWindowEx(0,
+	h_pnlwnd = CreateWindowEx(0,
 							TEXT(CLASS_NAME),
 							NULL,
-							WS_BORDER | WS_CHILD | WS_GROUP,
-							0, 0,
-							600, 50,
-							hwParent,
+							WS_BORDER | WS_CHILD | WS_GROUP | WS_VISIBLE,
+							cld_x0, cld_y0,
+							cld_w, cld_h,
+							hw_par,
 							NULL,
-							hmInst,
+							hm_inst,
 							NULL);
-	if (hpnlWnd == NULL)
+	if (h_pnlwnd == NULL)
 		ERR2("CreateWindowEx() failed", GetLastError());
 
 
@@ -68,12 +119,13 @@ panel::panel(HINSTANCE hmInst, HWND hwParent)
 
 void panel::show()
 {
-	ShowWindow(hpnlWnd, SW_NORMAL);
-	UpdateWindow(hpnlWnd);
+	ShowWindow(h_pnlwnd, SW_NORMAL);
+	if (!UpdateWindow(h_pnlwnd))
+		ERR("UpdateWindow()");
 }
 
 panel::~panel()
 {
-	if (!DestroyWindow(hpnlWnd))
-		ERR2("DestroyWindow() failed", GetLastError());;
+	if (IsWindow(h_pnlwnd))
+		DestroyWindow(h_pnlwnd);
 }
