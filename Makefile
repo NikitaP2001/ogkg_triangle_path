@@ -1,4 +1,12 @@
+ENV = $(shell uname)
+ifneq (,$(findstring MSYS_NT,$(ENV)))
+
+RM= rm
+else
 SHELL=cmd.exe
+RM= @-del
+
+endif
 TARGET = ogkg.exe
 
 CFLAGS = -c
@@ -33,4 +41,4 @@ $(TARGET): $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(LDLIBS) $^
 
 clean:
-	@-del *.o *.res
+	$(RM) *.o *.res
