@@ -9,7 +9,18 @@ RM= @-del
 endif
 TARGET = ogkg.exe
 
-CFLAGS = -c
+SRC_DIR = src
+RES_DIR = res
+OBJ_DIR = obj
+INC_DIR = inc
+
+vpath %.cpp SRC_DIR
+vpath %.hpp INC_DIR
+vpath %.rc RES_DIR
+vpath %.o OBJ_DIR
+vpath %.res OBJ_DIR
+
+CFLAGS = -c -I $(INC_DIR)
 LDFLAGS = -mwindows -lkernel32
 RCFLAGS = -O coff
 
@@ -17,16 +28,15 @@ CC=c++
 LD=c++
 RC=windres
 
-SOURCES = $(wildcard *.cpp)
-RESOURCES = $(wildcard *.rc)
-OBJECTS = $(SOURCES:.cpp=.o)
-OBJECTS += $(RESOURCES:.rc=.res)
+SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+RESOURCES = $(wildcard $(RES_DIR)/*.rc)
+OBJECTS = $(subst $(SRC_DIR)/,$(OBJ_DIR)/,$(SOURCES:.cpp=.o))
+OBJECTS += $(subst $(RES_DIR)/,$(OBJ_DIR)/,$(RESOURCES:.rc=.res))
 
-
-%.o: %.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ $<
 	
-%.res: %.rc
+$(OBJ_DIR)/%.res: $(RES_DIR)/%.rc
 	$(RC) $< $(RCFLAGS) $@
 
 all: CFLAGS += -DDEBUG
@@ -41,4 +51,4 @@ $(TARGET): $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(LDLIBS) $^
 
 clean:
-	$(RM) *.o *.res
+	$(RM) $(OBJ_DIR)/*.o $(OBJ_DIR)/*.res
