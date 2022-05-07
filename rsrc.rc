@@ -1,0 +1,13 @@
+#define IDM_MYMENURESOURCE   100
+#define IDM_SAVE 101
+#define IDM_LOAD 102
+
+
+IDM_MYMENURESOURCE MENU
+{
+	POPUP "File"
+	{
+		MENUITEM "Save", IDM_SAVE
+		MENUITEM "Load", IDM_LOAD
+	}		
+}
