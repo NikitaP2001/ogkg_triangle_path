@@ -55,7 +55,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 		.x0 = 0, 
 		.y0 = 0,
 		.width = 100,
-		.heigth = 30,
+		.height = 30,
 	}, DKGRAY_BRUSH);
 	
 	while (GetMessage(&msg, NULL, 0, 0)) {

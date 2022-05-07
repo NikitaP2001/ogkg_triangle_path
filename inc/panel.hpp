@@ -9,7 +9,7 @@ namespace gui {
 		long x0;
 		long y0;
 		long width;
-		long heigth;
+		long height;
 	};
 
 	class panel {
@@ -19,7 +19,11 @@ namespace gui {
 		Rectangle pnl_rec;
 	public:
 		panel(HINSTANCE hmInst, HWND hwParent, Rectangle pnRec, int bgColor);
-		
+
+		Rectangle get_panel_rect();
+
+		HWND get_panel_hwnd();
+
 		void show();
 		
 		~panel();

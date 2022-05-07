@@ -1,10 +1,13 @@
 #include <windows.h>
+#include <vector>
 
 #include "main.hpp"
 #include "panel.hpp"
 #include "error.hpp"
 
 using namespace gui;
+
+std::vector<panel*> panels;
 
 static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -14,32 +17,22 @@ static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			return 0;
 			
 		case WM_PAINT:
-			INFO("paint");
 			return 0;
-		case WM_SIZE:
-			RECT prRec;
-			if (!GetWindowRect(hw_par, &prRec))
-				ERR2("GetWindowRect()", GetLastError());
 
-			long prW = prRec.right - prRec.left;
-			long prH = prRec.bottom - prRec.top;
-			
-			long cld_x0, cld_w;
-			if (pnl_rec.x_relative) {
-				cld_x0 = prW * pnl_rec.x0 / 100;
-				cld_w = prW * pnl_rec.width / 100;
-			} else {
-				cld_x0 = pnl_rec.x0;
-				cld_w = pnl_rec.width;
-			}
-			long cld_y0, cld_h;
-			if (pnl_rec.y_relative) {
-				cld_y0 = prH * pnl_rec.y0 / 100;
-				cld_h = prH * pnl_rec.heigth / 100;
-			} else {
-				cld_y0 = pnl_rec.y0;
-				cld_h = pnl_rec.heigth;
-			}
+		case WM_SIZE:
+			INFO("resized");
+			for (std::vector<panel*>::iterator it = panels.begin();
+			it != panels.end(); ++it) {
+				if ((*it)->get_panel_hwnd() == hWnd) {
+					INFO("find wnd");
+					gui::Rectangle apr = (*it)->get_panel_rect();
+					if (!MoveWindow(hWnd, apr.x0, apr.y0, apr.width,
+					apr.height, true))
+						ERR2("MoveWindow", GetLastError());
+					break;
+				}
+			}		
+
 			return 0;
 
 		case WM_DESTROY:
@@ -55,31 +48,8 @@ panel::panel(HINSTANCE hmInstance, HWND hwParent, Rectangle pnlRect, int bgColor
 {			
 	WNDCLASSEX wc;
 
-	// calculate rect of panel
-	RECT prRec;
-	if (!GetWindowRect(hw_par, &prRec))
-		ERR2("GetWindowRect()", GetLastError());
-
-	long prW = prRec.right - prRec.left;
-	long prH = prRec.bottom - prRec.top;
-	
-	long cld_x0, cld_w;
-	if (pnl_rec.x_relative) {
-		cld_x0 = prW * pnl_rec.x0 / 100;
-		cld_w = prW * pnl_rec.width / 100;
-	} else {
-		cld_x0 = pnl_rec.x0;
-		cld_w = pnl_rec.width;
-	}
-	long cld_y0, cld_h;
-	if (pnl_rec.y_relative) {
-		cld_y0 = prH * pnl_rec.y0 / 100;
-		cld_h = prH * pnl_rec.heigth / 100;
-	} else {
-		cld_y0 = pnl_rec.y0;
-		cld_h = pnl_rec.heigth;
-	}
-
+	// absolute panel rectangle
+	Rectangle apr = get_panel_rect();
 	
 	if (!GetClassInfoExA(NULL, CLASS_NAME, (LPWNDCLASSEXA)&wc)) {
 	
@@ -105,8 +75,8 @@ panel::panel(HINSTANCE hmInstance, HWND hwParent, Rectangle pnlRect, int bgColor
 							TEXT(CLASS_NAME),
 							NULL,
 							WS_BORDER | WS_CHILD | WS_GROUP | WS_VISIBLE,
-							cld_x0, cld_y0,
-							cld_w, cld_h,
+							apr.x0, apr.y0,
+							apr.width, apr.height,
 							hw_par,
 							NULL,
 							hm_inst,
@@ -114,7 +84,8 @@ panel::panel(HINSTANCE hmInstance, HWND hwParent, Rectangle pnlRect, int bgColor
 	if (h_pnlwnd == NULL)
 		ERR2("CreateWindowEx() failed", GetLastError());
 
-
+	// add panel to global panels vec
+	panels.push_back(this);
 }
 
 void panel::show()
@@ -126,6 +97,54 @@ void panel::show()
 
 panel::~panel()
 {
+	for (std::vector<panel*>::iterator it = panels.begin();
+	it != panels.end(); ++it) {
+		if (*it == this)
+			panels.erase(it);
+	}
+
 	if (IsWindow(h_pnlwnd))
 		DestroyWindow(h_pnlwnd);
+}
+
+/* get rect of panel in coords, relative
+ * to the parent window
+ */
+
+gui::Rectangle panel::get_panel_rect()
+{
+	RECT prRec;
+	Rectangle chRec = {
+		.x_relative = false,
+		.y_relative = false,
+	};
+	if (!GetWindowRect(hw_par, &prRec))
+		ERR2("GetWindowRect()", GetLastError());
+
+	long prW = prRec.right - prRec.left;
+	long prH = prRec.bottom - prRec.top;
+	
+	if (pnl_rec.x_relative) {
+		chRec.x0 = prW * pnl_rec.x0 / 100;
+		chRec.width = prW * pnl_rec.width / 100;
+	} else {
+		chRec.x0 = pnl_rec.x0;
+		chRec.width = pnl_rec.width;
+	}
+
+	if (pnl_rec.y_relative) {
+		chRec.y0 = prH * pnl_rec.y0 / 100;
+		chRec.height = prH * pnl_rec.height / 100;
+	} else {
+		chRec.y0 = pnl_rec.y0;
+		chRec.height = pnl_rec.height;
+	}
+
+
+	return chRec;
+}
+
+HWND panel::get_panel_hwnd()
+{
+	return h_pnlwnd;
 }
