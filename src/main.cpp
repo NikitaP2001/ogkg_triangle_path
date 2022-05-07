@@ -8,6 +8,8 @@
 std::fstream dbg_out("log.txt", std::ios::out);
 #endif
 
+HWND ToolPanel;
+
 int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	static TCHAR szAppName[] = TEXT("Hello win 10!");
@@ -32,16 +34,16 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 	}
 	
 	if (!(hWnd = CreateWindow (szAppName,
-							TEXT("The hello program"),
-							WS_OVERLAPPEDWINDOW,
-							CW_USEDEFAULT,
-							CW_USEDEFAULT,
-							CW_USEDEFAULT,
-							CW_USEDEFAULT,
-							NULL,
-							NULL,
-							hInstance,
-							NULL))) {
+		TEXT("The hello program"),
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		NULL,
+		NULL,
+		hInstance,
+		NULL))) {
 		int dwErr = GetLastError();
 		PrintCSBackupAPIErrorMessage(dwErr);
 	}
@@ -49,7 +51,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
 	
-	gui::panel pnl(hInstance, hWnd, gui::Rectangle {
+	gui::panel pnl(hWnd, gui::Rectangle {
 		.x_relative = true,
 		.y_relative = false,
 		.x0 = 0, 
@@ -57,6 +59,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 		.width = 100,
 		.height = 30,
 	}, DKGRAY_BRUSH);
+	ToolPanel = pnl.get_panel_hwnd();
 	
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);
@@ -78,7 +81,6 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		return 0;
 		
 	case WM_COMMAND:
-		
 		switch(LOWORD(wParam)) { 
 		
                 case IDM_SAVE:
@@ -89,11 +91,15 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					break;				
         }             
         return 0; 
+
+	case WM_SIZE:
+		SendMessage(ToolPanel, WM_SIZE, 0, 0);
+		return 0;
 		
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		GetClientRect(hWnd, &rect);	
-		DrawText(hdc, TEXT("Hello, Charlez!"), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+		DrawText(hdc, TEXT("OGKG"), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
 		EndPaint(hWnd, &ps);
 		return 0;
 		

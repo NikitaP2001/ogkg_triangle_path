@@ -13,12 +13,11 @@ namespace gui {
 	};
 
 	class panel {
-		HWND h_pnlwnd;
-		HWND hw_par;
-		HINSTANCE hm_inst;
-		Rectangle pnl_rec;
+		HWND chld_hwnd;
+		HWND m_hwnd;
+		Rectangle wind_rec;
 	public:
-		panel(HINSTANCE hmInst, HWND hwParent, Rectangle pnRec, int bgColor);
+		panel(HWND hwParent, Rectangle pnRec, int bgColor);
 
 		Rectangle get_panel_rect();
 
