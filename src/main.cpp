@@ -40,7 +40,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		NULL,
+		NULL
 		NULL,
 		hInstance,
 		NULL))) {
@@ -59,7 +59,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine
 		.width = 100,
 		.height = 30,
 	}, DKGRAY_BRUSH);
-	ToolPanel = pnl.get_panel_hwnd();
+	ToolPanel = pnl.get_hwnd();
 	
 	while (GetMessage(&msg, NULL, 0, 0)) {
 		TranslateMessage(&msg);

@@ -21,9 +21,9 @@ static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 		case WM_SIZE:
 			for (std::vector<panel*>::iterator it = panels.begin();
 			it != panels.end(); ++it) {
-				if ((*it)->get_panel_hwnd() == hWnd) {
+				if ((*it)->get_hwnd() == hWnd) {
 					INFO("find wnd");
-					gui::Rectangle apr = (*it)->get_panel_rect();
+					gui::Rectangle apr = (*it)->get_rect();
 					if (!MoveWindow(hWnd, apr.x0, apr.y0, apr.width,
 					apr.height, true))
 						ERR2("MoveWindow", GetLastError());
@@ -41,12 +41,12 @@ static LRESULT CALLBACK PnlProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 }
 
 panel::panel(HWND hwParent, Rectangle pnlRect, int bgColor)
-: m_hwnd(hwParent), wind_rec(pnlRect)
+: child_window(hwParent, pnlRect)
 {			
 	WNDCLASSEX wc;
 
 	// absolute panel rectangle
-	Rectangle apr = get_panel_rect();
+	Rectangle apr = get_rect();
 	
 	if (!GetClassInfoExA(NULL, CLASS_NAME, (LPWNDCLASSEXA)&wc)) {
 	
@@ -108,7 +108,7 @@ panel::~panel()
 /* get rect of panel in coords, relative
  * to the parent window
  */
-gui::Rectangle panel::get_panel_rect()
+gui::Rectangle panel::get_rect()
 {
 	RECT prRec;
 	Rectangle chRec = {
@@ -141,7 +141,7 @@ gui::Rectangle panel::get_panel_rect()
 	return chRec;
 }
 
-HWND panel::get_panel_hwnd()
+HWND panel::get_hwnd()
 {
 	return chld_hwnd;
 }
