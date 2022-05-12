@@ -1,12 +1,6 @@
-ENV = $(shell uname)
-ifneq (,$(findstring MSYS_NT,$(ENV)))
-
-RM= rm
-else
 SHELL=cmd.exe
 RM= @-del
 
-endif
 TARGET = ogkg.exe
 
 SRC_DIR = src
@@ -51,4 +45,4 @@ $(TARGET): $(OBJECTS)
 	$(LD) $(LDFLAGS) -o $@ $(LDLIBS) $^
 
 clean:
-	$(RM) $(OBJ_DIR)/*.o $(OBJ_DIR)/*.res
+	$(RM) $(OBJ_DIR)\*.o $(OBJ_DIR)\*.res

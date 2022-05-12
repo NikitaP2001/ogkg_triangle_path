@@ -2,23 +2,17 @@
 
 namespace gui {
 	
-#define CLASS_NAME "panel"
-
-	
 	class panel : public child_window {
-			
+		virtual int msg_handler(HWND hWnd, UINT message,
+        WPARAM wParam, LPARAM lParam);
+
 	public:
 		panel(HWND hwParent, Rectangle pnRec, int bgColor);
 
-		Rectangle get_rect();
+		void add_button(gui::Rectangle btnRect);
 
-		HWND get_hwnd();
-
-		void show();
-		
-		~panel();
+		virtual ~panel();
 		
 	};
-
 	
 }
