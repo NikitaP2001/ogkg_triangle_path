@@ -13,32 +13,37 @@ std::vector<child_window*> child_window::all_childs;
 gui::Rectangle child_window::get_rect()
 {
 	RECT prRec;
-	Rectangle chRec = {
-		.x_relative = false,
-		.y_relative = false,
-	};
+	Rectangle chRec;
+
 	if (!GetWindowRect(m_hwnd, &prRec))
 		ERR2("GetWindowRect()", GetLastError());
 
 	long prW = prRec.right - prRec.left;
 	long prH = prRec.bottom - prRec.top;
 	
-	if (wind_rec.x_relative) {
+	if (wind_rec.x_relative)
 		chRec.x0 = prW * wind_rec.x0 / 100;
-		chRec.width = prW * wind_rec.width / 100;
-	} else {
+	else
 		chRec.x0 = wind_rec.x0;
-		chRec.width = wind_rec.width;
-	}
 
-	if (wind_rec.y_relative) {
+	if (wind_rec.y_relative)
 		chRec.y0 = prH * wind_rec.y0 / 100;
-		chRec.height = prH * wind_rec.height / 100;
-	} else {
+	else
 		chRec.y0 = wind_rec.y0;
-		chRec.height = wind_rec.height;
-	}
 
+	if (wind_rec.use_reverse_x1)
+		chRec.width = prW - chRec.x0 - wind_rec.x1;
+	else if (wind_rec.w_relative)
+		chRec.width = prW * wind_rec.width / 100;
+	else
+		chRec.width = wind_rec.width;
+
+	if (wind_rec.use_reverse_y1)
+		chRec.height = prH - chRec.y0 - wind_rec.y1;
+	else if (wind_rec.h_relative)
+		chRec.height = prH * wind_rec.height / 100;
+	else
+		chRec.height = wind_rec.height;
 
 	return chRec;
 }
@@ -63,6 +68,7 @@ child_window::~child_window()
 
 	if (IsWindow(chld_hwnd))
 		DestroyWindow(chld_hwnd);
+	CloseHandle(chld_hwnd);
 }
 
 HWND child_window::get_hwnd() const
@@ -98,7 +104,7 @@ child_window* child_window::find_child_window(HWND hwin)
 		++it;
 	}
 	if (it == all_childs.end())
-		throw std::runtime_error("hwnd not found");
+		return NULL;
 
 	return (*it);
 }
@@ -113,15 +119,9 @@ WPARAM wParam, LPARAM lParam)
 			
 		case WM_SIZE:
 		{
-			try {
-
-				find_child_window(hWnd)->scale_position();
-
-			} catch (std::exception &e) {
-
-				ERR(e.what());
-
-			}
+			child_window* cwnd = find_child_window(hWnd);
+			if (cwnd != NULL)
+				cwnd->scale_position();
 
 			return 0;
 		}
@@ -130,12 +130,12 @@ WPARAM wParam, LPARAM lParam)
 			return 0;
 	}	
 
-	try {
+	child_window* cwnd = find_child_window(hWnd);
+	if (cwnd != NULL) {
 		result = find_child_window(hWnd)->msg_handler(hWnd, message,
 		wParam, lParam);
-	} catch (...) {
+	} else
 		result = DefWindowProc(hWnd, message, wParam, lParam);
-	}
 
 	return result;
 }

@@ -9,11 +9,17 @@ namespace gui {
 
     struct Rectangle {
         bool x_relative; // if flag set, size by axis is specified
-        bool y_relative; // in percents, relative to parent size
         long x0;
+        bool y_relative; // in percents, relative to parent size
         long y0;
+        bool w_relative;
         long width;
+        bool h_relative;
         long height;
+        bool use_reverse_x1; // use distance from parent wnd end
+        long x1;
+        bool use_reverse_y1;
+        long y1;
     };
 
     class child_window {

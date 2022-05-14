@@ -1,24 +1,19 @@
-#include <windows.h>
-#include <vector>
-
-#include "main.hpp"
-#include "panel.hpp"
+#include "canvas.hpp"
 #include "error.hpp"
+#include "main.hpp"
 
-#define CLASS_NAME "panel"
+#define CLASS_NAME "canvas"
 
 using namespace gui;
 
-std::vector<panel*> panels;
-
-int panel::msg_handler(HWND hWnd, UINT message, WPARAM wParam, 
+int canvas::msg_handler(HWND hWnd, UINT message, WPARAM wParam, 
 LPARAM lParam)
 {
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-panel::panel(HWND hwParent, Rectangle pnlRect, int bgColor)
-: child_window(hwParent, pnlRect)
+canvas::canvas(HWND hwParent, Rectangle plRect, int bgColor)
+: child_window(hwParent, plRect)
 {			
 	WNDCLASSEX wc;
 	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(m_hwnd, GWLP_HINSTANCE);
@@ -63,17 +58,7 @@ panel::panel(HWND hwParent, Rectangle pnlRect, int bgColor)
 	all_childs.push_back(this);
 }
 
-void panel::add_button(gui::Rectangle btnRect, gui::btn_proc user_proc,
-int active_res)
-{
-	gui::button* nbut = new button(chld_hwnd, btnRect);
-	nbut->set_handler(user_proc);
-	if (active_res != 0) 
-		nbut->set_bmp_active(active_res);
-	elements.push_back(nbut);
-}
-
-panel::~panel()
+canvas::~canvas()
 {
 
 }

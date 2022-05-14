@@ -18,17 +18,23 @@ CFLAGS = -c -I $(INC_DIR)
 LDFLAGS = -mwindows -lkernel32
 RCFLAGS = -O coff
 
+AS=\masm32\bin\ml64.exe
 CC=c++
 LD=c++
 RC=windres
 
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+ASMS = $(wildcard $(SRC_DIR)/*.asm)
 RESOURCES = $(wildcard $(RES_DIR)/*.rc)
 OBJECTS = $(subst $(SRC_DIR)/,$(OBJ_DIR)/,$(SOURCES:.cpp=.o))
 OBJECTS += $(subst $(RES_DIR)/,$(OBJ_DIR)/,$(RESOURCES:.rc=.res))
+OBJECTS += $(subst $(SRC_DIR)/,$(OBJ_DIR)/,$(ASMS:.asm=.o))
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ $<
+	
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.asm
+	$(AS) /c /Cp /Fo $@ $<
 	
 $(OBJ_DIR)/%.res: $(RES_DIR)/%.rc
 	$(RC) $< $(RCFLAGS) $@

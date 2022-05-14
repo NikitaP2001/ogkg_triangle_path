@@ -3,8 +3,7 @@
 
 #include "main.hpp"
 #include "error.hpp"
-#include "panel.hpp"
-#include "button.hpp"
+#include "logic.hpp"
 
 #ifdef DEBUG
 std::fstream dbg_out("log.txt", std::ios::out);
@@ -12,6 +11,7 @@ std::fstream dbg_out("log.txt", std::ios::out);
 
 // child windows, which wait resize msg
 std::vector<HWND> send_resize;
+
 
 int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance,
 PSTR szCmdLine, int iCmdShow)
@@ -52,36 +52,11 @@ PSTR szCmdLine, int iCmdShow)
 		PrintCSBackupAPIErrorMessage(dwErr);
 	}
 
-	// create and show toolbox
-	gui::panel toolbox(hWnd,
-		gui::Rectangle {
-		.x_relative = true,
-		.y_relative = false,
-		.x0 = 0, 
-		.y0 = 0,
-		.width = 100,
-		.height = 20,
-		}, DKGRAY_BRUSH);	
+	gui::panel *toolbox = create_toolbox(hWnd);
+	send_resize.push_back(toolbox->get_hwnd());
 
-	gui::Rectangle btn_rec = {
-		.x_relative = false,
-		.y_relative = false,
-		.x0 = 3, 
-		.y0 = 2,
-		.width = 16,
-		.height = 16,
-	};
-	toolbox.add_button(btn_rec);
-	btn_rec.x0 += btn_rec.width + 3;
-	toolbox.add_button(btn_rec);
-	btn_rec.x0 += btn_rec.width + 3;
-	toolbox.add_button(btn_rec);
-	btn_rec.x0 += btn_rec.width + 3;
-	toolbox.add_button(btn_rec);
-	btn_rec.x0 += btn_rec.width + 3;
-	toolbox.add_button(btn_rec);
-	
-	send_resize.push_back(toolbox.get_hwnd());
+	gui::canvas *mcanvas = create_canvas(hWnd);
+	send_resize.push_back(mcanvas->get_hwnd());
 
 	ShowWindow(hWnd, iCmdShow);
 	UpdateWindow(hWnd);
@@ -90,6 +65,8 @@ PSTR szCmdLine, int iCmdShow)
 
 		DispatchMessage(&msg);
 	}
+
+	delete toolbox;
 		
 	return msg.wParam;
 }
@@ -102,7 +79,15 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:		
+	{
+		HINSTANCE hInstance = ((LPCREATESTRUCT)lParam)->hInstance;
+		HICON hIcon = LoadIcon (hInstance, MAKEINTRESOURCE (IDI_ICON));
+		if (hIcon == NULL) {
+			ERR2("icon load failed", GetLastError());
+		} else 
+			SendMessage (hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 		return 0;
+	}
 		
 	case WM_COMMAND:
 		switch(LOWORD(wParam)) { 

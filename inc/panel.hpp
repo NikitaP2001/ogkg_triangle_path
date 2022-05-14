@@ -1,4 +1,5 @@
 #include "child_window.hpp"
+#include "button.hpp"
 
 namespace gui {
 	
@@ -9,7 +10,8 @@ namespace gui {
 	public:
 		panel(HWND hwParent, Rectangle pnRec, int bgColor);
 
-		void add_button(gui::Rectangle btnRect);
+		void add_button(gui::Rectangle btnRect,
+		gui::btn_proc user_proc, int active_res = 0);
 
 		virtual ~panel();
 		
