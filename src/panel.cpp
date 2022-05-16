@@ -63,7 +63,7 @@ panel::panel(HWND hwParent, Rectangle pnlRect, int bgColor)
 	all_childs.push_back(this);
 }
 
-void panel::add_button(gui::Rectangle btnRect, gui::btn_proc user_proc,
+void panel::add_button(gui::Rectangle btnRect, gui::user_proc user_proc,
 int active_res)
 {
 	gui::button* nbut = new button(chld_hwnd, btnRect);

@@ -15,7 +15,7 @@ vpath %.o OBJ_DIR
 vpath %.res OBJ_DIR
 
 CFLAGS = -c -I $(INC_DIR)
-LDFLAGS = -mwindows -lkernel32
+LDFLAGS = -mwindows -lkernel32 -lmsimg32
 RCFLAGS = -O coff
 
 AS=\masm32\bin\ml64.exe

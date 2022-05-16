@@ -2,7 +2,12 @@
 #include "main.hpp"
 #include "error.hpp"
 
-static int btn1proc(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int btn_paint(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int canvasproc(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int btn_clear(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int btn_start(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int btn_finish(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
+static int btn_begin(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam);
 
 gui::panel *toolbox;
 gui::canvas *mcanvas;
@@ -39,15 +44,15 @@ gui::panel *create_toolbox(HWND hWnd)
 		.use_reverse_x1 = false,
 		.use_reverse_y1 = false,
 	};
-	toolbox->add_button(btn_rec, btn1proc, IDI_BUTTON_PENCIL);
+	toolbox->add_button(btn_rec, btn_paint, IDI_BUTTON_PENCIL);
 	btn_rec.x0 += btn_rec.width + 3;
-	toolbox->add_button(btn_rec, NULL);
+	toolbox->add_button(btn_rec, btn_start, IDI_BUTTON_START);
 	btn_rec.x0 += btn_rec.width + 3;
-	toolbox->add_button(btn_rec, NULL);
+	toolbox->add_button(btn_rec, btn_finish, IDI_BUTTON_FINISH);
 	btn_rec.x0 += btn_rec.width + 3;
-	toolbox->add_button(btn_rec, NULL);
+	toolbox->add_button(btn_rec, btn_begin, IDI_BUTTON_BEGIN);
 	btn_rec.x0 += btn_rec.width + 3;
-	toolbox->add_button(btn_rec, NULL);
+	toolbox->add_button(btn_rec, btn_clear, IDI_BUTTON_CLEAR);
 
 	return toolbox;
 }
@@ -64,20 +69,132 @@ gui::canvas *create_canvas(HWND hWnd)
 		.x1 = 20,
 		.use_reverse_y1 = true,
 		.y1 = 65,
-		}, LTGRAY_BRUSH);	
+		}, RGB(211, 211, 211));	
+
+	mcanvas->set_handler(canvasproc);
+	mcanvas->lntc.drawn = false;
 
 	return mcanvas;
 }
 
+bool is_drawing = false;
+bool is_setstart = false;
+bool is_setfinish = false;
 
-static int btn1proc(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+point *last_point = NULL;
+
+static int canvasproc(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message) {
 		case WM_LBUTTONDOWN:
-			MessageBoxA(0, "Invoked", "hmm", 0);
+			POINT pt;
+			pt.x = GET_X_LPARAM(lParam);
+			pt.y = GET_Y_LPARAM(lParam);
+
+			if (is_drawing) {
+				
+				point *new_p = mcanvas->add_point(pt);
+				if (last_point != new_p && last_point != NULL) {
+					new_p = mcanvas->add_line(last_point, new_p);
+				}
+				mcanvas->last_point = new_p;
+				last_point = new_p;
+				mcanvas->lntc.drawn = true;
+			} else if (is_setstart) {
+
+				mcanvas->set_start(pt);
+				is_setstart = false;
+
+			} else if (is_setfinish) {
+
+				mcanvas->set_finish(pt);
+				is_setfinish = false;
+			}
+			return 0;
+
+		case WM_RBUTTONDOWN:
+			last_point = NULL;
+			mcanvas->lntc.drawn = false;
+			mcanvas->update();
 			return 0;
 	}
 
 	return 1;
 }
 
+static int btn_paint(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_LBUTTONDOWN:
+			is_drawing ^= 1;
+			return 0;
+	}
+
+	return 1;
+}
+
+static int btn_clear(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_LBUTTONDOWN:
+		{
+			is_drawing = false;
+			last_point = NULL;
+			mcanvas->clear();
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int btn_start(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_LBUTTONDOWN:
+		{
+			mcanvas->last_point = NULL;
+			mcanvas->lntc.drawn = false;
+			mcanvas->update();
+			is_drawing = false;
+			last_point = NULL;
+			is_setstart = true;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int btn_finish(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_LBUTTONDOWN:
+		{	
+			mcanvas->last_point = NULL;
+			mcanvas->lntc.drawn = false;
+			mcanvas->update();
+			is_drawing = false;
+			last_point = NULL;
+			is_setfinish = true;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int btn_begin(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch (message) {
+		case WM_LBUTTONDOWN:
+		{
+			mcanvas->last_point = NULL;
+			mcanvas->lntc.drawn = false;
+			mcanvas->update();
+			is_drawing = false;
+			last_point = NULL;
+
+			mcanvas->build_hull();
+			return 0;
+		}
+	}
+	return 1;
+}

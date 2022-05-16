@@ -72,9 +72,6 @@ PSTR szCmdLine, int iCmdShow)
 }
 
 LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam){
-	HDC hdc;
-	PAINTSTRUCT ps;
-	RECT rect;
 	
 	switch (message)
 	{
@@ -108,13 +105,6 @@ LRESULT CALLBACK WndProc (HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			UpdateWindow(ch_hw);
 
 		}
-		return 0;
-		
-	case WM_PAINT:
-		hdc = BeginPaint(hWnd, &ps);
-		GetClientRect(hWnd, &rect);	
-		DrawText(hdc, TEXT("Oh shit"), -1, &rect, DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-		EndPaint(hWnd, &ps);
 		return 0;
 		
 	case WM_DESTROY:

@@ -5,7 +5,8 @@
 
 namespace gui {
 
-
+    typedef int (*user_proc)(HWND hWnd, UINT message,
+    WPARAM wParam, LPARAM lParam);
 
     struct Rectangle {
         bool x_relative; // if flag set, size by axis is specified

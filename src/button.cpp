@@ -46,7 +46,6 @@ LPARAM lParam)
 
 				DeleteObject(hbm);
 			}
-			
 
 			DeleteDC(dcBg);
 		}
@@ -133,9 +132,9 @@ int button::set_bmp_disabled(int resource)
 	return 1;
 }
 
-btn_proc button::set_handler(btn_proc new_proc)
+user_proc button::set_handler(user_proc new_proc)
 {
-	btn_proc old = user_def_proc;
+	user_proc old = user_def_proc;
 	user_def_proc = new_proc;
 	return old;
 }

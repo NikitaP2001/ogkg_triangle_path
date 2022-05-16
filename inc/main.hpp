@@ -9,6 +9,10 @@
 #define IDM_LOAD 102
 #define IDI_BUTTON_PENCIL 150
 #define IDI_ICON 151
+#define IDI_BUTTON_CLEAR 152
+#define IDI_BUTTON_START 153
+#define IDI_BUTTON_FINISH 154
+#define IDI_BUTTON_BEGIN 155
 
 LRESULT CALLBACK WndProc (HWND, UINT, WPARAM, LPARAM); 
 
@@ -38,11 +42,13 @@ do {} while (0)
 
 #define ERR2(x, dwErr) 											\
 { 																\
-	PrintCSBackupAPIErrorMessage(dwErr);						\
+	char *msg = get_api_err_msg(dwErr);							\
 	float t = ((float)clock()) / (CLOCKS_PER_SEC);				\
 	dbg_out << "[-]" << "[" << __FILE__ << "][" 				\
 	<< __FUNCTION__ << "][" << __LINE__ << "] :" << std::fixed	\
-	<< std::setprecision(2) << t << " " << x << std::endl; 		\
+	<< std::setprecision(2) << t << " " << x << " : " << msg 	\
+	<< std::endl; 												\
+	delete[] msg;												\
 } 																\
 do {} while (0)
 
@@ -66,5 +72,8 @@ do {} while (0)
 #define SUCC(x) do {} while (0)
 	
 #endif
+
+#define GET_X_LPARAM(lParam) lParam & 0xFFFF
+#define GET_Y_LPARAM(lParam) lParam >> 0x10
 
 #endif 	// MAIN_HPP
