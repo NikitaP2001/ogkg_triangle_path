@@ -9,7 +9,7 @@ using namespace gui;
 #define PT_SIZE 6
 
 template <class T>
-static void free_vector(std::vector<T*> &vec)
+static void free_container(T &vec)
 {
 	if (vec.size() != 0) {
 		for (auto el : vec)
@@ -18,12 +18,13 @@ static void free_vector(std::vector<T*> &vec)
 	}
 }
 
-static void draw_points(HDC dc, std::vector<point*> &vec, COLORREF col)
+template <class T>
+static void draw_points(HDC dc, T &pts, COLORREF col)
 {
 	HBRUSH hbst = CreateSolidBrush(col);
 	HGDIOBJ hold = SelectObject(dc, hbst);
 
-	for (auto pt : vec) {
+	for (auto pt : pts) {
 		Ellipse(dc, pt->x-PT_SIZE/2, pt->y-PT_SIZE/2, pt->x + PT_SIZE,
 		pt->y + PT_SIZE);
 	}
@@ -71,7 +72,7 @@ LPARAM lParam)
 			
 			draw_lines(tempdc, lines, RGB(0, 0, 0));
 
-			draw_lines(tempdc, hull_lines, RGB(0, 255, 0));
+			draw_lines(tempdc, temp_lines, RGB(0, 255, 0));
 
 			// draw way start and finish point
 			if (start != NULL) {
@@ -221,7 +222,7 @@ point *canvas::add_point(POINT new_point)
 	point *p = new point();
 	p->x = new_point.x;
 	p->y = new_point.y;
-	points.push_back(p);
+	points.insert(p);
 	last_point = p;
 	update();
 
@@ -264,7 +265,7 @@ void canvas::update()
 
 void canvas::remove_point(point *pt)
 {
-	std::vector<point*>::iterator it;
+	std::set<point*, comp_pt>::iterator it;
 	for (it = points.begin(); it != points.end(); ++it) {
 		if ((*it) == pt)
 			break;
@@ -276,11 +277,10 @@ void canvas::remove_point(point *pt)
 
 void canvas::clear()
 {
-	free_vector<point>(points);
-	free_vector<line>(lines);
+	free_container<>(points);
+	free_container<>(lines);
 
-	free_vector<point>(hull_points);
-	free_vector<line>(hull_lines);
+	free_container<>(temp_lines);
 	
 	lntc.drawn = false;
 	last_point = NULL;
@@ -299,11 +299,9 @@ canvas::~canvas()
 	if (finish != NULL)
 		delete finish;
 
-	for (auto ln : hull_lines)
+	for (auto ln : temp_lines)
 		delete ln;
-	for (auto pt : hull_points)
-		delete pt;
-
+	
 	DeleteObject(bg_brush);
 }
 
@@ -331,30 +329,61 @@ void canvas::build_hull()
 	}
 
 	// delete old hull
-	free_vector<point>(hull_points);
-	free_vector<line>(hull_lines);
+	free_container<>(temp_lines);
 
 	// group all points to one array
 	int pc = points.size() + 2;
+	auto pit = points.begin();
 	point *all_pts = new point[pc];
-	for (int i = 0; i < pc-2; i++) {
-		all_pts[i] = *points[i];
+	for (int i = 0; i < pc-2; i++, ++pit) {
+		all_pts[i] = *(*pit);
 	}
 	all_pts[pc-2] = *start;
 	all_pts[pc-1] = *finish;
 
 	// build convex hull around all points
+	std::vector<point> hull_points;
 	hull_points = algos::convex_hull::convexHull(all_pts, pc);
-	
+	delete[] all_pts;
+
+	// add missing lines to hull
 	for (int i = 1; i <= hull_points.size(); i++) {
 		line *ln = new line();
-		point *pt1 = hull_points[(i-1) % hull_points.size()];
-		point *pt2 = hull_points[(i) % hull_points.size()];
-		ln->p1 = pt1;
-		ln->p2 = pt2;
-		hull_lines.push_back(ln);
+		// find first point by val in all points set
+		point pt1 = hull_points[(i-1) % hull_points.size()];
+		point *ppt1;
+		if (pt1 == *start)
+			ppt1 = start;
+		else if (pt1 == *finish)
+			ppt1 = finish;
+		else
+			ppt1 = *points.find(&pt1);
+
+		// fin secong point by val in all points set
+		point pt2 = hull_points[(i) % hull_points.size()];
+		point *ppt2;
+		if (pt2 == *start)
+			ppt2 = start;
+		else if (pt2 == *finish)
+			ppt2 = finish;
+		else
+			ppt2 = *points.find(&pt2);
+
+		// add hull line
+		ln->p1 = ppt1;
+		ln->p2 = ppt2;
+		temp_lines.push_back(ln);
 	}
 
+	// group all point and line, regularize recieved graph
+	std::vector<line*> all_lines = lines;
+	all_lines.insert(all_lines.end(), temp_lines.begin(), temp_lines.end());
+	auto all_points = points;
+	all_points.insert(start);
+	all_points.insert(finish);
+	std::vector<line*> regular = 
+	algos::regularization::adjust_to_regular(all_lines, all_points);
+	temp_lines.insert(temp_lines.end(), regular.begin(), regular.end());
+
 	update();
-	delete[] all_pts;
 }

@@ -39,7 +39,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.asm
 $(OBJ_DIR)/%.res: $(RES_DIR)/%.rc
 	$(RC) $< $(RCFLAGS) $@
 
-all: CFLAGS += -DDEBUG
+all: CFLAGS += -DDEBUG -g
 all: $(TARGET) 
 
 release: CFLAGS += -s -fdata-sections -ffunction-sections

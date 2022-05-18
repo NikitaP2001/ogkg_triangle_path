@@ -3,6 +3,7 @@
 #include "child_window.hpp"
 #include "algos.hpp"
 #include <vector>
+#include <set>
 
 
 namespace gui {
@@ -15,12 +16,13 @@ namespace gui {
 
     class canvas : public child_window {
 		user_proc user_def_proc;
-		std::vector<point*> points;
-		std::vector<line*> lines;
-		std::vector<line*> h_lines;
-		std::vector<line*> hull_lines;
-		std::vector<point*> hull_points;
 
+		std::set<point*, comp_pt> points;
+
+		std::vector<line*> lines;
+		std::vector<line*> temp_lines;
+
+		
 		point *start;
 		point *finish;
 		COLORREF bg_color;

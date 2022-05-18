@@ -1,4 +1,5 @@
 #include <ostream>
+#include <set>
 
 struct point {
     long nlines;
@@ -10,6 +11,21 @@ struct point {
         o << pt.x << " " << pt.y;
         return o;
     }
+
+    bool operator==(point &other)
+    {
+        return this->x == other.x && this->y == other.y;
+    }
+};
+
+struct comp_pt {
+			bool operator()(point *lp, point *rp) const
+			{
+				if (lp->x == rp->x)
+					return lp->y < rp->y;
+				else
+					return lp->x < rp->x;
+            }
 };
 
 struct line {
@@ -28,7 +44,13 @@ namespace intersection {
 
 namespace convex_hull {
 
-    std::vector<point*> convexHull(point points[], int n);
+    std::vector<point> convexHull(point points[], int n);
+}
+
+namespace regularization {
+
+    std::vector<line*> adjust_to_regular(std::vector<line*> lines,
+    std::set<point*, comp_pt> points);
 }
 
 } // ::algos

@@ -126,9 +126,9 @@ namespace convex_hull {
     }
     
     // Graham scan
-    std::vector<point*> convexHull(point points[], int n)
+    std::vector<point> convexHull(point points[], int n)
     {
-        std::vector<point*> result;
+        std::vector<point> result;
         // Find the bottommost point
         int ymin = points[0].y, min = 0;
         for (int i = 1; i < n; i++)
@@ -197,7 +197,7 @@ namespace convex_hull {
         // Now stack has the output points, print contents of stack
         while (!S.empty())
         {
-            point *p = new point(S.top());
+            point p = S.top();
             result.push_back(p);
             S.pop();
         }
@@ -207,6 +207,195 @@ namespace convex_hull {
 
     
 } // ::convex_hull
+
+namespace regularization {
+	
+	struct sector {
+		std::vector<point*> left_border;
+		std::vector<line*> status;
+    };
+	
+	// go down flat sweep
+	void top_to_down(std::vector<line*> &res, std::vector<sector> &sectors)
+	{
+		// top to down regularize
+        auto it = sectors.rbegin();
+        ++it;
+        for ( ; it != sectors.rend(); ++it) {
+
+            // for each point on sector border
+            for (auto pt : (*it).left_border) {
+                bool is_regular = false;
+
+                for (auto ln : (*it).status) {
+                    // have outgoing lines
+                    if (ln->p1 == pt || ln->p2 == pt) {
+                        is_regular = true;
+                        break;
+                    }
+                }
+
+                auto it_to_end = std::prev(it);
+                auto oite = it;
+                line *new_line = NULL;				
+                // make regular, go up, searching where 
+				// to inset line
+                while (!is_regular) {
+                    // try to add new line for each pt in seg
+                    for (auto prevpt : (*it_to_end).left_border) {
+						bool intersect = false;
+						// will new line intercept any line in seg
+                        for (auto pln : (*oite).status) {							
+                            if (intersection::doIntersect(*pln->p1, *pln->p2,
+                            *pt, *prevpt)
+							&& !intersection::IntersectPoint(*pln->p1, *pln->p2,
+                            *pt, *prevpt))
+                                intersect = true;															
+                        }
+						// found where to place new line
+						if (!intersect) {
+							new_line = new line;
+							new_line->p1 = pt;
+							new_line->p2 = prevpt;
+							is_regular = true;
+							break;
+						}
+                    }
+                    
+                    if (it_to_end == sectors.rbegin()) {
+						if (!is_regular)
+							INFO("not found");
+                        break;
+                    } else {
+                        oite = it_to_end;
+                        it_to_end = std::prev(it_to_end); 
+                    } 
+
+                }
+
+                // update status
+                if (new_line != NULL) {
+                    res.push_back(new_line);
+                    do {
+                        (*oite).status.push_back(new_line);
+                    } while(oite++ != it);
+                }
+
+            }
+        }
+	}
+	
+	// go up flat sweep
+	void down_to_top(std::vector<line*> &res, std::vector<sector> &sectors)
+	{
+		 // down to top regularization
+        auto rit = sectors.begin();
+        auto prit = rit;
+        ++rit;
+        for ( ; rit != sectors.end(); prit = rit, ++rit) {
+
+            // for each point on sector border
+            for (auto pt : (*rit).left_border) {
+                bool is_regular = false;
+
+                for (auto ln : (*prit).status) {
+                    // have ingoing lines
+                    if (ln->p1 == pt || ln->p2 == pt) {
+                        is_regular = true;
+                        break;
+                    }
+                }
+
+                auto it_to_beg = prit;
+                line *new_line = NULL;				
+				
+				// go down, searching where to
+				// insert line
+                while (!is_regular) {
+                    // try insert new line pt - prevpt
+                    for (auto prevpt : (*it_to_beg).left_border) {
+						bool intersect = false;
+						// seek for intercepribg lines
+                        for (auto pln : (*it_to_beg).status) {
+                            if (intersection::doIntersect(*pln->p1, *pln->p2,
+                            *pt, *prevpt)
+							&& !intersection::IntersectPoint(*pln->p1, *pln->p2,
+                            *pt, *prevpt))
+                                intersect = true;
+                        }
+						// its possible to insert
+						if (!intersect) {
+							new_line = new line;
+							new_line->p1 = pt;
+							new_line->p2 = prevpt;
+							is_regular = true;
+							break;
+						}
+                    }
+
+                    if (it_to_beg == sectors.begin()) {
+						if (!is_regular)
+							INFO("not found");
+                        break;
+                    } else
+                        it_to_beg = std::prev(it_to_beg); 
+                }
+
+                // update status
+                if (new_line != NULL) {
+                    res.push_back(new_line);
+                    while (it_to_beg != rit) {
+                        (*it_to_beg).status.push_back(new_line);
+                        ++it_to_beg;
+                    }
+                }
+
+            }
+        }
+	}
+
+    // add new lines to make regular by Ox
+    std::vector<line*> adjust_to_regular(std::vector<line*> lines,
+    std::set<point*, comp_pt> points)
+    {
+        std::vector<line*> res;
+        std::vector<sector> sectors;
+        // monotonic interval scheduling by Ox
+        for (auto it = points.rbegin(); it != points.rend(); ++it)
+        {
+            // check if this point already in sector
+            if (sectors.size() > 0) {
+                sector &prev = sectors.back();
+                // if in prev sector, add to its points
+                if (prev.left_border.front()->x == (*it)->x) {
+                    prev.left_border.push_back(*it);
+                    continue;
+                }
+            }
+
+            sector sec;
+            sec.left_border.push_back(*it);
+            // set status lines
+            for (auto ln : lines) {
+                if ((ln->p1->x <= (*it)->x && ln->p2->x > (*it)->x)
+                || (ln->p2->x <= (*it)->x && ln->p1->x > (*it)->x)
+                || (ln->p2->x == (*it)->x && ln->p1->x == (*it)->x)) {
+                    sec.status.push_back(ln);
+                }
+            }
+            sectors.insert(sectors.begin(), sec);
+            
+        }
+
+        top_to_down(res, sectors);
+
+		down_to_top(res, sectors);
+
+        return res;
+    }
+
+
+}
 
 
 } // ::algos
