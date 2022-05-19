@@ -1,10 +1,12 @@
 #include <ostream>
 #include <set>
 
+struct line;
+
 struct point {
-    long nlines;
     long x;
     long y;
+    std::vector<line*> incindent;
 
     friend std::ostream &operator<<(std::ostream &o, const point &pt)
     {
@@ -31,6 +33,15 @@ struct comp_pt {
 struct line {
     point *p1;
     point *p2;
+
+    line(point *_p1, point *_p2)
+    : p1(_p1), p2(_p2)
+    {
+        _p1->incindent.push_back(this);
+        _p2->incindent.push_back(this);
+    }
+
+    ~line();
 };
 
 namespace algos {

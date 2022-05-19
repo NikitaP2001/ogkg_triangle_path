@@ -192,7 +192,7 @@ static int btn_begin(HWND hWin, UINT message, WPARAM wParam, LPARAM lParam)
 			is_drawing = false;
 			last_point = NULL;
 
-			mcanvas->build_hull();
+			mcanvas->find_path();
 			return 0;
 		}
 	}

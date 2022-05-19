@@ -50,7 +50,7 @@ namespace gui {
 
 		void update();
 
-		void build_hull();
+		void find_path();
 
 		user_proc set_handler(user_proc new_proc);
 

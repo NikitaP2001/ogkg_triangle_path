@@ -10,6 +10,14 @@ static inline bool eqPoint(point p1, point p2)
     return p1.x == p2.x && p1.y == p2.y;
 }
 
+line::~line()
+{
+    auto &vec1 = p1->incindent;
+    auto &vec2 = p2->incindent;
+    vec1.erase(std::remove(vec1.begin(), vec1.end(), this), vec1.end());
+    vec2.erase(std::remove(vec2.begin(), vec2.end(), this), vec2.end());
+}
+
 namespace algos {
 
 namespace intersection {
@@ -254,9 +262,7 @@ namespace regularization {
                         }
 						// found where to place new line
 						if (!intersect) {
-							new_line = new line;
-							new_line->p1 = pt;
-							new_line->p2 = prevpt;
+							new_line = new line(pt, prevpt);
 							is_regular = true;
 							break;
 						}
@@ -325,9 +331,7 @@ namespace regularization {
                         }
 						// its possible to insert
 						if (!intersect) {
-							new_line = new line;
-							new_line->p1 = pt;
-							new_line->p2 = prevpt;
+							new_line = new line(pt, prevpt);
 							is_regular = true;
 							break;
 						}
@@ -360,31 +364,46 @@ namespace regularization {
     {
         std::vector<line*> res;
         std::vector<sector> sectors;
+        std::vector<line*> not_finished;
         // monotonic interval scheduling by Ox
         for (auto it = points.rbegin(); it != points.rend(); ++it)
         {
-            // check if this point already in sector
-            if (sectors.size() > 0) {
-                sector &prev = sectors.back();
-                // if in prev sector, add to its points
-                if (prev.left_border.front()->x == (*it)->x) {
-                    prev.left_border.push_back(*it);
-                    continue;
-                }
+            // if in prev sector, add to its points
+            sector &prev = sectors.front();
+            if (sectors.size() > 0 && prev.left_border.front()->x == (*it)->x) {
+                prev.left_border.push_back(*it);
+                continue;
+            } else {
+                sectors.insert(sectors.begin(), sector());
+                sectors.front().left_border.push_back(*it);
             }
 
-            sector sec;
-            sec.left_border.push_back(*it);
-            // set status lines
-            for (auto ln : lines) {
-                if ((ln->p1->x <= (*it)->x && ln->p2->x > (*it)->x)
-                || (ln->p2->x <= (*it)->x && ln->p1->x > (*it)->x)
-                || (ln->p2->x == (*it)->x && ln->p1->x == (*it)->x)) {
-                    sec.status.push_back(ln);
+            sector *sec = &sectors.front();
+
+            // add lines from prev seg
+            for (auto ln : not_finished) {
+                sec->status.push_back(ln);
+            }
+            // remove edges finished on this sector
+            not_finished.erase(std::remove_if(not_finished.begin(),
+            not_finished.end(), [&it](line* ln){
+                return (ln->p1 == (*it) || ln->p2 == (*it));
+            }), not_finished.end());
+
+            // add new lines in status
+            for (auto ln : (*it)->incindent) {
+                if (ln->p1 == (*it)) {
+                    if (ln->p2->x >= (*it)->x)
+                        sec->status.push_back(ln);
+                    else 
+                        not_finished.push_back(ln);
+                } else if (ln->p2 == (*it)) {
+                    if (ln->p1->x >= (*it)->x)
+                        sec->status.push_back(ln);
+                    else
+                        not_finished.push_back(ln);
                 }
             }
-            sectors.insert(sectors.begin(), sec);
-            
         }
 
         top_to_down(res, sectors);
@@ -395,7 +414,46 @@ namespace regularization {
     }
 
 
-}
+} // ::regularization
 
+namespace monotone_chains {
+
+    struct edge {
+        line* ln;
+        long W;     //weight
+        edge(line *_ln)
+        : W(1), ln(_ln) {}
+    };
+
+    int sine_line_oY(point *p, line *ln) {
+        int phi;
+        if (ln->p1->y > p->y)
+            return -phi;
+        else 
+            return phi;
+    }
+
+    void build_chain(std::vector<line*> lines,
+    std::set<point*, comp_pt> points)
+    {
+        std::vector<edge> edges;
+        // initilize edges with 1 weight 
+        for (auto ln : lines)
+            edges.push_back(edge(ln));
+
+        auto it = points.begin();
+        for (it++; it != points.end(); it++) {
+            long Win;
+            line *d;
+        }
+
+        auto rit = points.rbegin();
+        for (rit++; rit != points.rend(); rit++) {
+
+        }
+
+    }
+
+} // ::monotone_chains
 
 } // ::algos

@@ -247,12 +247,7 @@ point *canvas::add_line(point *pt1, point *pt2)
 		}
 	}
 
-	line *newl = new line;
-	newl->p1 = pt1;
-	newl->p2 = pt2;
-	pt1->nlines += 1;
-	pt2->nlines += 1;
-	lines.push_back(newl);
+	lines.push_back(new line(pt1, pt2));
 	update();
 	return pt2;
 }
@@ -265,14 +260,8 @@ void canvas::update()
 
 void canvas::remove_point(point *pt)
 {
-	std::set<point*, comp_pt>::iterator it;
-	for (it = points.begin(); it != points.end(); ++it) {
-		if ((*it) == pt)
-			break;
-	}
-
-	if (it != points.end() && (*it)->nlines == 0)
-		points.erase(it);
+	if (pt->incindent.size() == 0)
+		points.erase(pt);
 }
 
 void canvas::clear()
@@ -321,7 +310,7 @@ void canvas::set_finish(POINT pt)
 	update();
 }
 
-void canvas::build_hull()
+void canvas::find_path()
 {
 	if (start == NULL || finish == NULL) {
 		MessageBoxA(NULL, "Set start and finish", "nag!", MB_APPLMODAL);
@@ -348,7 +337,6 @@ void canvas::build_hull()
 
 	// add missing lines to hull
 	for (int i = 1; i <= hull_points.size(); i++) {
-		line *ln = new line();
 		// find first point by val in all points set
 		point pt1 = hull_points[(i-1) % hull_points.size()];
 		point *ppt1;
@@ -359,7 +347,7 @@ void canvas::build_hull()
 		else
 			ppt1 = *points.find(&pt1);
 
-		// fin secong point by val in all points set
+		// find secong point by val in all points set
 		point pt2 = hull_points[(i) % hull_points.size()];
 		point *ppt2;
 		if (pt2 == *start)
@@ -369,10 +357,7 @@ void canvas::build_hull()
 		else
 			ppt2 = *points.find(&pt2);
 
-		// add hull line
-		ln->p1 = ppt1;
-		ln->p2 = ppt2;
-		temp_lines.push_back(ln);
+		temp_lines.push_back(new line(ppt1, ppt2));
 	}
 
 	// group all point and line, regularize recieved graph
