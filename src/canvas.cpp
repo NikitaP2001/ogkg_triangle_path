@@ -393,8 +393,9 @@ void canvas::find_path()
 	std::vector<point*> way;
 	try {
 		way = algos::way::build_way(all_points, start, finish);
-	} catch (std::logic_error &e)
+	} catch (std::logic_error &e) {
 		ERR(e.what());
+	}
 
 	if (way.size() > 0)
 		for (auto it1 = way.begin(), it2 = way.begin() + 1;
@@ -408,6 +409,8 @@ void canvas::find_path()
 	for (auto ln : chull) {
 		delete ln;
 	}
+	for (auto ln : regular)
+		delete ln;
 
 	update();
 }

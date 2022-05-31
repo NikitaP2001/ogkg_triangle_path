@@ -699,6 +699,7 @@ namespace triangulation {
 
 namespace way {
 
+    #define INF -1
     #define BLOCK -2
 
     /* A utility function to return square of distance
@@ -790,7 +791,7 @@ namespace way {
                 || pcur->way_len + pdist(pcur, pfar) < pfar->way_len)) {
                     sway wres = roll_in(pcur, finish, *it, false);
                     if (wres.cost != BLOCK
-                    && (minway.cost == INFINITY || wres.cost < minway.cost))
+                    && (minway.cost == INF || wres.cost < minway.cost))
                         minway = wres;
                 }
 
@@ -811,7 +812,7 @@ namespace way {
                 || pcur->way_len + pdist(pcur, pfar) < pfar->way_len)) {
                     sway wres = roll_in(pcur, finish, *it, true);
                     if (wres.cost != BLOCK
-                    && (minway.cost == INFINITY || wres.cost < minway.cost))
+                    && (minway.cost == INF || wres.cost < minway.cost))
                         minway = wres;
                 }
             } while ((*it)->is_temp);
@@ -823,8 +824,10 @@ namespace way {
             minway.cost += pcur->way_len;
             minway.way.push_back(pcur);
         // not found
-        } else
+        } else {
             pcur->way_len = BLOCK;
+            minway.cost = BLOCK;
+        }
 
         return minway;
     }
@@ -843,7 +846,7 @@ namespace way {
         for (auto ln : start->incindent) {
             sway neww = roll_in(start, finish, ln, true);
             if (neww.cost != BLOCK
-            && (minway.cost == INFINITY || neww.cost < minway.cost))
+            && (minway.cost == INF || neww.cost < minway.cost))
                 minway = neww;
         }
 
