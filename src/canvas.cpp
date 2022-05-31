@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "canvas.hpp"
 #include "error.hpp"
 #include "main.hpp"
@@ -330,7 +331,9 @@ void canvas::find_path()
 	all_pts[pc-2] = *start;
 	all_pts[pc-1] = *finish;
 
+	
 	// build convex hull around all points
+	std::vector<line*> chull;
 	std::vector<point> hull_points;
 	hull_points = algos::convex_hull::convexHull(all_pts, pc);
 	delete[] all_pts;
@@ -357,18 +360,54 @@ void canvas::find_path()
 		else
 			ppt2 = *points.find(&pt2);
 
-		temp_lines.push_back(new line(ppt1, ppt2));
+		// skip duplicate is a must
+		bool present = false;
+		for (auto ln : lines)
+			if ((*ln->p1 == *ppt1 && *ln->p2 == *ppt2)
+        	|| (*ln->p1 == *ppt2 && *ln->p2 == *ppt1)) {
+				present = true;
+			}
+		if (!present) {
+			line *nl = new line(ppt1, ppt2);
+			nl->is_temp = true;
+			chull.push_back(nl);
+		}
 	}
 
 	// group all point and line, regularize recieved graph
 	std::vector<line*> all_lines = lines;
-	all_lines.insert(all_lines.end(), temp_lines.begin(), temp_lines.end());
+	all_lines.insert(all_lines.begin(), chull.begin(), chull.end());
 	auto all_points = points;
 	all_points.insert(start);
 	all_points.insert(finish);
 	std::vector<line*> regular = 
 	algos::regularization::adjust_to_regular(all_lines, all_points);
-	temp_lines.insert(temp_lines.end(), regular.begin(), regular.end());
+	all_lines.insert(all_lines.end(), regular.begin(), regular.end());
+
+	std::vector<std::vector<point*>> chains =
+	algos::monotone_chains::build_chain(all_lines, all_points);
+	
+	std::vector<line*> triangulation =
+	algos::triangulation::triangulate_chains(chains);
+
+	std::vector<point*> way;
+	try {
+		way = algos::way::build_way(all_points, start, finish);
+	} catch (std::logic_error &e)
+		ERR(e.what());
+
+	if (way.size() > 0)
+		for (auto it1 = way.begin(), it2 = way.begin() + 1;
+		it2 != way.end(); it1++, it2++) {
+			temp_lines.push_back(new line(*it1, *it2));
+		}
+
+	for (auto ln : triangulation) {
+		delete ln;
+	}
+	for (auto ln : chull) {
+		delete ln;
+	}
 
 	update();
 }
