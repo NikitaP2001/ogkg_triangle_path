@@ -787,8 +787,8 @@ namespace way {
                 point *pfar = (pcur != (*it)->p1) ? (*it)->p1 : (*it)->p2;
 
                 // is sense to roll in *it line
-                if (pfar->way_len != BLOCK && (pfar->way_len == INFINITE
-                || pcur->way_len + pdist(pcur, pfar) < pfar->way_len)) {
+                if (pfar->way_len == INFINITE
+                || pcur->way_len + pdist(pcur, pfar) < pfar->way_len) {
                     sway wres = roll_in(pcur, finish, *it, false);
                     if (wres.cost != BLOCK
                     && (minway.cost == INF || wres.cost < minway.cost))
@@ -808,8 +808,8 @@ namespace way {
                     break;
                 point *pfar = (pcur != (*it)->p1) ? (*it)->p1 : (*it)->p2;
 
-                if (pfar->way_len != BLOCK && (pfar->way_len == INFINITE
-                || pcur->way_len + pdist(pcur, pfar) < pfar->way_len)) {
+                if (pfar->way_len == INFINITE
+                || pcur->way_len + pdist(pcur, pfar) < pfar->way_len) {
                     sway wres = roll_in(pcur, finish, *it, true);
                     if (wres.cost != BLOCK
                     && (minway.cost == INF || wres.cost < minway.cost))
@@ -825,7 +825,6 @@ namespace way {
             minway.way.push_back(pcur);
         // not found
         } else {
-            pcur->way_len = BLOCK;
             minway.cost = BLOCK;
         }
 
